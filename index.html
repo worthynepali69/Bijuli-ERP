@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bijuli Courier | Nepal's Premier Logistics Network</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        :root {
+            --primary-red: #dc2626;
+            --primary-dark: #0f172a;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            color: var(--primary-dark); 
+            background: #ffffff; 
+            scroll-behavior: smooth; 
+        }
+        
+        .nav-active { 
+            color: var(--primary-red); 
+            font-weight: 800;
+            position: relative;
+        }
+        
+        .nav-active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary-red);
+        }
+        
+        /* Subtle Dot Background */
+        .hero-pattern { 
+            background-color: #ffffff;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+
+        .card-uniform {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-uniform:hover {
+            transform: translateY(-6px);
+            border-color: var(--primary-red);
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-primary {
+            background: var(--primary-dark);
+            color: white;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 14px 32px;
+            border-radius: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-red);
+            box-shadow: 0 10px 20px -5px rgba(220, 38, 38, 0.3);
+        }
+
+        /* Journey Flow Chart */
+        .journey-step {
+            min-width: 280px;
+            position: relative;
+        }
+        .journey-line::after {
+            content: '';
+            position: absolute;
+            top: 28px;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background: #e2e8f0;
+            z-index: 0;
+        }
+        .journey-step:last-child .journey-line::after {
+            display: none;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #f1f5f9;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            background: #f8fafc;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-red);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.05);
+        }
+
+        .loading-spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- NAVIGATION -->
+    <header class="h-24 border-b border-slate-100 px-6 lg:px-16 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-[100]">
+        <div class="flex items-center gap-4 cursor-pointer" onclick="showTab('track')">
+            <div class="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-red-600/20">
+                <i data-lucide="zap" class="w-7 h-7 fill-current"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-black tracking-tighter leading-none uppercase text-slate-900">Bijuli <span class="text-red-600">Courier</span></h1>
+                <p class="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400 mt-1">Nepal Logistics Matrix</p>
+            </div>
+        </div>
+        <nav class="hidden md:flex items-center gap-12">
+            <button onclick="showTab('track')" class="nav-btn text-xs font-black uppercase tracking-widest hover:text-red-600 transition-all nav-active" id="btn-track">Track</button>
+            <button onclick="showTab('services')" class="nav-btn text-xs font-black uppercase tracking-widest hover:text-red-600 transition-all" id="btn-services">Services</button>
+            <button onclick="showTab('branches')" class="nav-btn text-xs font-black uppercase tracking-widest hover:text-red-600 transition-all" id="btn-branches">Network</button>
+            <button onclick="showTab('careers')" class="nav-btn text-xs font-black uppercase tracking-widest hover:text-red-600 transition-all" id="btn-careers">Jobs</button>
+            <a href="staff.html" class="bg-slate-900 text-white px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-xl hover:shadow-red-600/20">Staff Portal</a>
+        </nav>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1">
+        
+        <!-- SECTION: TRACKING -->
+        <section id="tab-track" class="content-section">
+            <div class="hero-pattern py-36 px-8 text-center">
+                <div class="max-w-4xl mx-auto">
+                    <span class="text-red-600 font-bold uppercase text-[10px] tracking-[0.3em] mb-6 block bg-red-50 w-fit mx-auto px-5 py-2 rounded-full border border-red-100">Verified Dispatch Telemetry</span>
+                    <h2 class="text-6xl md:text-8xl font-black tracking-tighter mb-8 uppercase text-slate-900 leading-none">
+                        Track Your <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-500">Parcel</span>
+                    </h2>
+                    <p class="text-slate-500 text-lg mb-16 font-medium max-w-xl mx-auto leading-relaxed">
+                        Enter your Air Waybill (AWB) number to receive instantaneous updates from our national sorting facility.
+                    </p>
+                    
+                    <div class="max-w-2xl mx-auto bg-white p-3 rounded-2xl flex shadow-2xl shadow-slate-200/60 border border-slate-100">
+                        <input type="text" id="track-input" placeholder="AWB Number (e.g. 1001)" class="flex-1 border-none px-8 py-4 text-slate-900 text-2xl font-bold placeholder:text-slate-300 bg-transparent uppercase">
+                        <button onclick="handleTrack()" id="track-btn" class="btn-primary flex items-center gap-3">
+                            <span>Locate</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRACKING RESULT CARD -->
+            <div id="track-result" class="max-w-4xl mx-auto py-16 px-8 hidden">
+                <div class="bg-white border border-slate-200 rounded-[2.5rem] p-12 shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-12">
+                        <span id="status-pill" class="px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest">STATUS</span>
+                    </div>
+                    <div class="mb-12 border-b border-slate-50 pb-10">
+                        <p class="text-[10px] font-bold text-red-600 uppercase tracking-widest mb-2">Shipment Authenticated</p>
+                        <h3 id="res-id" class="text-7xl font-black tracking-tighter uppercase text-slate-900 leading-none">#----</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
+                        <div class="space-y-10">
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Origin Entity</p><p id="res-vendor" class="text-2xl font-black uppercase tracking-tight text-slate-800">---</p></div>
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Consignee</p><p id="res-customer" class="text-2xl font-black uppercase tracking-tight text-slate-800">---</p></div>
+                        </div>
+                        <div class="space-y-10">
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Target Node</p><p id="res-dest" class="text-2xl font-black uppercase tracking-tight text-slate-800">---</p></div>
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Last Transmission</p><p id="res-comment" class="text-base font-semibold text-slate-600 italic leading-relaxed bg-slate-50 p-6 rounded-3xl border border-slate-100">---</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: SERVICES -->
+        <section id="tab-services" class="content-section hidden py-32 px-8 bg-slate-50">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-20">
+                    <h2 class="text-5xl font-black tracking-tighter uppercase text-slate-900 mb-4">Core <span class="text-red-600">Solutions</span></h2>
+                    <p class="text-slate-400 text-xs font-extrabold uppercase tracking-[0.4em]">Integrated Logistics Matrix</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <div class="card-uniform p-12 bg-white">
+                        <div class="w-16 h-16 bg-red-50 text-red-600 flex items-center justify-center rounded-2xl mb-10"><i data-lucide="zap" class="w-8 h-8"></i></div>
+                        <h4 class="text-2xl font-black uppercase mb-4 text-slate-900">Spine Express</h4>
+                        <p class="text-sm font-medium text-slate-500 leading-relaxed">High-frequency trunk route operations connecting the industrial hearts of Butwal, Kathmandu, and Pokhara.</p>
+                    </div>
+                    <div class="card-uniform p-12 bg-white">
+                        <div class="w-16 h-16 bg-slate-50 text-slate-900 flex items-center justify-center rounded-2xl mb-10"><i data-lucide="shopping-bag" class="w-8 h-8"></i></div>
+                        <h4 class="text-2xl font-black uppercase mb-4 text-slate-900">Business Sync</h4>
+                        <p class="text-sm font-medium text-slate-500 leading-relaxed">Enterprise-grade COD collection and rapid return cycles designed specifically for Nepal's e-commerce giants.</p>
+                    </div>
+                    <div class="card-uniform p-12 bg-white">
+                        <div class="w-16 h-16 bg-slate-50 text-slate-900 flex items-center justify-center rounded-2xl mb-10"><i data-lucide="truck" class="w-8 h-8"></i></div>
+                        <h4 class="text-2xl font-black uppercase mb-4 text-slate-900">Regional Cargo</h4>
+                        <p class="text-sm font-medium text-slate-500 leading-relaxed">Heavy-load solutions spanning across our 41-node infrastructure, reaching the most remote districts.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: BRANCHES -->
+        <section id="tab-branches" class="content-section hidden py-32 px-8">
+            <div class="max-w-7xl mx-auto text-center mb-24">
+                <h2 class="text-5xl font-black tracking-tighter uppercase text-slate-900 mb-4">Branch <span class="text-red-600">Network</span></h2>
+                <p class="text-slate-400 text-xs font-extrabold uppercase tracking-[0.4em]">41 Strategic Operations Hubs</p>
+            </div>
+            <div id="branch-master-list" class="max-w-7xl mx-auto space-y-24"></div>
+        </section>
+
+        <!-- SECTION: JOBS -->
+        <section id="tab-careers" class="content-section hidden bg-white">
+            <!-- Application Journey -->
+            <div class="py-24 px-8 border-b border-slate-100 text-center bg-slate-50/50">
+                <div class="max-w-6xl mx-auto">
+                    <span class="text-red-600 font-bold uppercase text-[10px] tracking-[0.3em] mb-6 block">Hiring Ecosystem</span>
+                    <h2 class="text-5xl font-black tracking-tighter uppercase text-slate-900 mb-16">Application <span class="text-red-600">Journey</span></h2>
+                    
+                    <div class="relative">
+                        <div class="flex overflow-x-auto hide-scrollbar gap-8 pb-10 snap-x px-4" id="journey-flow">
+                            <div class="journey-step snap-center shrink-0">
+                                <div class="journey-line relative flex items-center mb-8"><div class="w-14 h-14 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xl z-10 border-4 border-white shadow-xl">1</div></div>
+                                <h4 class="font-black text-base uppercase text-slate-900 mb-3">Initial Screening</h4>
+                                <p class="text-xs font-medium text-slate-400 max-w-[200px] mx-auto">Review of credentials and first-round alignment.</p>
+                            </div>
+                            <div class="journey-step snap-center shrink-0">
+                                <div class="journey-line relative flex items-center mb-8"><div class="w-14 h-14 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xl z-10 border-4 border-white shadow-xl">2</div></div>
+                                <h4 class="font-black text-base uppercase text-slate-900 mb-3">Alignment</h4>
+                                <p class="text-xs font-medium text-slate-400 max-w-[200px] mx-auto">Discussing roles and mutual expectations.</p>
+                            </div>
+                            <div class="journey-step snap-center shrink-0">
+                                <div class="journey-line relative flex items-center mb-8"><div class="w-14 h-14 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xl z-10 border-4 border-white shadow-xl">3</div></div>
+                                <h4 class="font-black text-base uppercase text-slate-900 mb-3">Assessment</h4>
+                                <p class="text-xs font-medium text-slate-400 max-w-[200px] mx-auto">Evaluating specific technical logistics skills.</p>
+                            </div>
+                            <div class="journey-step snap-center shrink-0">
+                                <div class="journey-line relative flex items-center mb-8"><div class="w-14 h-14 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-xl z-10 border-4 border-white shadow-xl">4</div></div>
+                                <h4 class="font-black text-base uppercase text-slate-900 mb-3">HR Interview</h4>
+                                <p class="text-xs font-medium text-slate-400 max-w-[200px] mx-auto">Final cultural fit and benefit discussion.</p>
+                            </div>
+                            <div class="journey-step snap-center shrink-0">
+                                <div class="journey-line relative flex items-center mb-8"><div class="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center font-black text-xl z-10 border-4 border-white shadow-xl">5</div></div>
+                                <h4 class="font-black text-base uppercase text-slate-900 mb-3">Onboarding</h4>
+                                <p class="text-xs font-medium text-slate-400 max-w-[200px] mx-auto">Joining the national elite logistics team.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vacancy List -->
+            <div class="py-32 px-8 max-w-7xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+                    <div>
+                        <h3 class="text-4xl font-black uppercase tracking-tighter">Current <span class="text-red-600">Openings</span></h3>
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Available across 41 branch nodes</p>
+                    </div>
+                    <div class="flex gap-4 w-full md:w-auto">
+                        <input type="text" id="job-search" placeholder="Search Role or City..." class="px-6 py-4 border rounded-2xl font-bold text-sm w-full md:w-80 shadow-sm" oninput="filterJobs()">
+                        <select id="job-prov-filter" class="px-6 py-4 border rounded-2xl font-bold text-sm bg-white shadow-sm" onchange="filterJobs()">
+                            <option value="All">All Provinces</option>
+                            <option value="Bagmati">Bagmati</option>
+                            <option value="Lumbini">Lumbini</option>
+                            <option value="Gandaki">Gandaki</option>
+                            <option value="Koshi">Koshi</option>
+                            <option value="Madhesh">Madhesh</option>
+                            <option value="Karnali">Karnali</option>
+                            <option value="Sudurpashchim">Sudurpashchim</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="job-board" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+                <div id="no-jobs" class="hidden text-center py-20 text-slate-300 font-black uppercase tracking-widest">No matching roles found</div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-950 text-white py-24 px-8 border-t-8 border-red-600">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-16">
+            <div class="max-w-md">
+                <h2 class="text-4xl font-black tracking-tighter uppercase mb-8">Bijuli <span class="text-red-600">Courier</span></h2>
+                <p class="text-slate-500 font-medium leading-relaxed">Delivering trust at the speed of lightning. We are Nepal's most sophisticated logistics infrastructure connecting every district and every citizen.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-24">
+                <div>
+                    <p class="text-[10px] font-black uppercase text-red-600 mb-8 tracking-[0.3em]">Corporate</p>
+                    <ul class="space-y-4 text-xs font-bold uppercase tracking-widest text-slate-400">
+                        <li class="hover:text-white cursor-pointer transition-colors">HQ Butwal</li>
+                        <li class="hover:text-white cursor-pointer transition-colors">Privacy Policy</li>
+                        <li class="hover:text-white cursor-pointer transition-colors">Terms of Flow</li>
+                    </ul>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black uppercase text-red-600 mb-8 tracking-[0.3em]">Support</p>
+                    <ul class="space-y-4 text-xs font-bold uppercase tracking-widest text-slate-400">
+                        <li class="hover:text-white cursor-pointer transition-colors">Merchant Portal</li>
+                        <li class="hover:text-white cursor-pointer transition-colors">Contact Center</li>
+                        <li class="hover:text-white cursor-pointer transition-colors">Branch Locations</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto mt-24 pt-10 border-t border-slate-900 text-center">
+            <p class="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-600">© 2024 Bijuli Logistics Private Limited • Nepal</p>
+        </div>
+    </footer>
+
+    <!-- JOB APPLICATION MODAL -->
+    <div id="job-modal" class="fixed inset-0 bg-slate-950/95 z-[500] hidden flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden">
+            <button onclick="closeJobModal()" class="absolute top-8 right-8 text-slate-300 hover:text-red-600 transition-colors bg-slate-50 p-2 rounded-full z-10"><i data-lucide="x"></i></button>
+            
+            <div id="modal-content-view" class="overflow-y-auto p-12 space-y-10">
+                <!-- Details view -->
+            </div>
+
+            <form id="apply-form" class="hidden overflow-y-auto p-12 space-y-8">
+                <div>
+                    <h3 class="text-3xl font-black uppercase tracking-tight mb-2">Application Form</h3>
+                    <p class="text-xs font-bold text-red-600 uppercase" id="applying-for-label"></p>
+                </div>
+                <div class="grid grid-cols-2 gap-6">
+                    <div><label>Full Name</label><input type="text" required placeholder="John Doe"></div>
+                    <div><label>Phone Number</label><input type="tel" required placeholder="98XXXXXXXX"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-6">
+                    <div><label>Email Address</label><input type="email" required placeholder="email@example.com"></div>
+                    <div><label>Date of Birth</label><input type="date" required></div>
+                </div>
+                <div><label>Current Address</label><input type="text" required placeholder="Street, City, Ward No."></div>
+                <div><label>Attach CV (PDF, DOCX, PNG)</label><input type="file" required class="bg-white border-dashed border-2 border-slate-200 py-6 text-center cursor-pointer"></div>
+                <div><label>Interest Message to HR</label><textarea rows="4" placeholder="Briefly explain why you are the best fit for Bijuli..."></textarea></div>
+                <div class="flex gap-4 pt-6">
+                    <button type="button" onclick="showDetailsView()" class="w-1/3 py-4 font-bold uppercase text-[10px] tracking-widest text-slate-400">Back</button>
+                    <button type="submit" class="w-2/3 btn-primary">Submit Application</button>
+                </div>
+            </form>
+
+            <div id="apply-success" class="hidden flex flex-col items-center justify-center p-16 text-center">
+                <div class="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-8 shadow-inner"><i data-lucide="check-circle" class="w-12 h-12"></i></div>
+                <h3 class="text-4xl font-black uppercase tracking-tighter text-slate-900 mb-4">Application Success</h3>
+                <p class="text-slate-500 font-medium text-lg mb-10 leading-relaxed">Your profile has been transmitted to our National HR Hub. If your credentials align, we will initiate the screening process via phone.</p>
+                <button onclick="closeJobModal()" class="btn-primary">Return to Vacancies</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DB_URL = "https://script.google.com/macros/s/AKfycbxZbZTiR6rVKpIOwd-tHe2TIE-4voY5o_6afdcDM9p_wOn67RiQF9rraM-VLmoKquJX/exec";
+        
+        const BRANCH_DATA = {
+            "Bagmati": ["Kathmandu – New Road", "Kathmandu – Kalanki", "Lalitpur", "Bharatpur", "Hetauda"],
+            "Lumbini": ["Butwal (HQ)", "Nepalgunj (Super Hub)", "Bhairahawa", "Sainamaina", "Ghorahi", "Sunwal"],
+            "Gandaki": ["Pokhara – Lakeside", "Pokhara – New Road", "Gaidakot"],
+            "Koshi": ["Biratnagar", "Itahari", "Birtamode", "Damak"],
+            "Madhesh": ["Birgunj", "Janakpur", "Kalaiya"],
+            "Karnali": ["Birendranagar"],
+            "Sudurpashchim": ["Dhangadhi"]
+        };
+
+        let JOBS = [];
+        let FILTERED_JOBS = [];
+        let ACTIVE_JOB = null;
+
+        function generateVacancies() {
+            JOBS = [];
+            // HQ Special Roles
+            JOBS.push({ id: 1, role: "Financial Incharge", loc: "Butwal (HQ)", prov: "Lumbini", pay: "26k + Bonus", req: "Bachelor's in Finance/Accounting required. Minimum 2 years experience in ledger management." });
+            JOBS.push({ id: 2, role: "Transport Manager", loc: "Butwal (HQ)", prov: "Lumbini", pay: "35k + Bonus", req: "Bachelor's Degree. Mission: Manage national route plans, vehicle tracking, and cost optimization." });
+            JOBS.push({ id: 3, role: "HR Executive", loc: "Butwal (HQ)", prov: "Lumbini", pay: "Competitive", req: "Bachelor's in Management. Strong communication and conflict resolution skills." });
+
+            // Regional Transport Assistants
+            const trLocs = ["Kathmandu", "Pokhara", "Bharatpur", "Biratnagar", "Birendranagar", "Dhangadhi"];
+            trLocs.forEach(c => JOBS.push({ id: Math.random(), role: "Transport Assistant", loc: c, prov: "Regional", pay: "20k + Bonus", req: "10+2 Pass. Knowledge of local routes and vehicle coordination essential." }));
+
+            // Standard Branch Roles
+            Object.keys(BRANCH_DATA).forEach(prov => {
+                BRANCH_DATA[prov].forEach(city => {
+                    JOBS.push({ id: Math.random(), role: "Operation Incharge", loc: city, prov: prov, pay: "20k + Bonus", req: "10+2 Pass. Candidates with ongoing Bachelor's degrees are highly welcomed." });
+                });
+                JOBS.push({ id: Math.random(), role: "City Manager", loc: prov + " Hub", prov: prov, pay: "35k + Bonus", req: "Bachelor's Degree Required. Strong leadership and logistics management skills." });
+            });
+            FILTERED_JOBS = [...JOBS];
+        }
+
+        function showTab(id) {
+            document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${id}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('nav-active'));
+            document.getElementById(`btn-${id}`).classList.add('nav-active');
+            if(id === 'careers') { generateVacancies(); filterJobs(); }
+            if(id === 'branches') renderBranches();
+            window.scrollTo({top:0});
+        }
+
+        function renderBranches() {
+            const container = document.getElementById('branch-master-list');
+            container.innerHTML = Object.keys(BRANCH_DATA).map(prov => `
+                <div class="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div class="flex items-center gap-6 mb-10">
+                        <div class="h-px bg-slate-200 flex-1"></div>
+                        <h3 class="text-xs font-black uppercase text-slate-300 tracking-[0.4em] italic">${prov} Province</h3>
+                        <div class="h-px bg-slate-200 flex-1"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        ${BRANCH_DATA[prov].map(b => `<div class="card-uniform p-10 bg-white group hover:border-red-600 transition-all">
+                            <h4 class="font-black text-slate-900 text-lg mb-3 uppercase tracking-tight group-hover:text-red-600">${b}</h4>
+                            <div class="flex items-center gap-3 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                <i data-lucide="map-pin" class="w-3 h-3 text-red-600"></i> Active Node
+                            </div>
+                        </div>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function filterJobs() {
+            const q = document.getElementById('job-search').value.toLowerCase();
+            const p = document.getElementById('job-prov-filter').value;
+            FILTERED_JOBS = JOBS.filter(j => 
+                (j.role.toLowerCase().includes(q) || j.loc.toLowerCase().includes(q)) && 
+                (p === 'All' || j.prov === p)
+            );
+            
+            const board = document.getElementById('job-board');
+            if(FILTERED_JOBS.length === 0) {
+                board.innerHTML = '';
+                document.getElementById('no-jobs').classList.remove('hidden');
+            } else {
+                document.getElementById('no-jobs').classList.add('hidden');
+                board.innerHTML = FILTERED_JOBS.map((j, i) => `
+                    <div class="card-uniform p-8 bg-white flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-6">
+                                <span class="bg-red-50 text-red-600 text-[9px] font-black uppercase px-3 py-1 rounded-full border border-red-100 tracking-widest">Urgent</span>
+                                <span class="text-[9px] font-bold text-slate-300 uppercase">${j.prov}</span>
+                            </div>
+                            <h4 class="text-2xl font-black uppercase text-slate-900 leading-tight">${j.role}</h4>
+                            <p class="text-xs font-bold text-slate-400 mt-2 uppercase tracking-wide flex items-center gap-2">
+                                <i data-lucide="map-pin" class="w-3 h-3"></i> ${j.loc}
+                            </p>
+                        </div>
+                        <button onclick="openJobDetails(${i})" class="mt-10 py-4 border-2 border-slate-100 rounded-2xl font-bold uppercase text-[10px] tracking-[0.2em] hover:bg-slate-900 hover:text-white transition-all shadow-sm">More Details</button>
+                    </div>
+                `).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function openJobDetails(idx) {
+            ACTIVE_JOB = FILTERED_JOBS[idx];
+            const content = document.getElementById('modal-content-view');
+            content.innerHTML = `
+                <div>
+                    <span class="bg-slate-900 text-white text-[9px] font-black uppercase px-4 py-1.5 rounded-full tracking-widest mb-4 inline-block">${ACTIVE_JOB.prov} Hub</span>
+                    <h3 class="text-5xl font-black uppercase tracking-tighter text-slate-900 mb-2">${ACTIVE_JOB.role}</h3>
+                    <p class="text-lg font-bold text-red-600 uppercase tracking-widest flex items-center gap-3"><i data-lucide="map-pin"></i> ${ACTIVE_JOB.loc}</p>
+                </div>
+                
+                <div class="space-y-8 pt-6">
+                    <div class="bg-slate-50 p-8 rounded-[2rem] border border-slate-100">
+                        <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">Base Compensation</p>
+                        <p class="text-2xl font-black text-slate-900">${ACTIVE_JOB.pay}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-black uppercase text-slate-900 mb-4 border-l-4 border-red-600 pl-4 tracking-widest">Role Expectations</h4>
+                        <p class="text-sm font-medium text-slate-600 leading-relaxed">${ACTIVE_JOB.req}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-black uppercase text-slate-900 mb-4 border-l-4 border-slate-900 pl-4 tracking-widest">Mission Context</h4>
+                        <p class="text-sm font-medium text-slate-500 leading-relaxed">Managing routes, finding alternatives, maintaining tracking records, and attending strategy meetings to minimize operational cost and distance is our national mission.</p>
+                    </div>
+                    <button onclick="showApplyForm()" class="w-full btn-primary py-5 text-base">Proceed to Apply</button>
+                </div>
+            `;
+            showDetailsView();
+            document.getElementById('job-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function showApplyForm() {
+            document.getElementById('modal-content-view').classList.add('hidden');
+            document.getElementById('apply-form').classList.remove('hidden');
+            document.getElementById('applying-for-label').innerText = `Applying for: ${ACTIVE_JOB.role} (${ACTIVE_JOB.loc})`;
+        }
+
+        function showDetailsView() {
+            document.getElementById('apply-form').classList.add('hidden');
+            document.getElementById('apply-success').classList.add('hidden');
+            document.getElementById('modal-content-view').classList.remove('hidden');
+        }
+
+        document.getElementById('apply-form').onsubmit = (e) => {
+            e.preventDefault();
+            document.getElementById('apply-form').classList.add('hidden');
+            document.getElementById('apply-success').classList.remove('hidden');
+        };
+
+        function closeJobModal() { document.getElementById('job-modal').classList.add('hidden'); }
+
+        async function handleTrack() {
+            const btn = document.getElementById('track-btn');
+            const id = document.getElementById('track-input').value.trim().replace('#','');
+            if(!id) return;
+            btn.innerHTML = `<div class="loading-spinner"></div>`;
+            try {
+                const res = await fetch(`${DB_URL}?tab=Orders`);
+                const data = await res.json();
+                const o = data.find(x => x.id.toString() === id);
+                const resBox = document.getElementById('track-result');
+                if(o) {
+                    document.getElementById('res-id').innerText = '#' + o.id;
+                    document.getElementById('res-vendor').innerText = o.type === 'Vendor' ? o.v_name : o.s_name;
+                    document.getElementById('res-customer').innerText = o.c_name;
+                    document.getElementById('res-dest').innerText = (o.dest||'').split(' - ')[0];
+                    const latestLog = (o.log && o.log.length > 0) ? (typeof o.log[0] === 'object' ? o.log[0].t : o.log[0]) : 'Consignment registered at HQ.';
+                    document.getElementById('res-comment').innerText = latestLog;
+                    
+                    const pill = document.getElementById('status-pill');
+                    pill.innerText = o.status;
+                    if(o.status==='Delivered') pill.className = "px-6 py-2 rounded-full text-[10px] font-black uppercase bg-green-600 text-white tracking-widest";
+                    else if(o.status==='In Transit') pill.className = "px-6 py-2 rounded-full text-[10px] font-black uppercase bg-amber-500 text-white tracking-widest";
+                    else pill.className = "px-6 py-2 rounded-full text-[10px] font-black uppercase bg-slate-900 text-white tracking-widest";
+                    
+                    resBox.classList.remove('hidden');
+                    window.scrollTo({ top: resBox.offsetTop - 150, behavior: 'smooth' });
+                } else { alert("AWB Not Found"); resBox.classList.add('hidden'); }
+            } catch (err) { alert("Network Error"); } finally { btn.innerText = "Locate"; }
+        }
+
+        window.onload = () => lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bijuli ERP | Enterprise Dispatch Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Libre+Barcode+39&family=JetBrains+Mono:wght@400;600&display=swap');
+        
+        :root {
+            --primary-red: #dc2626;
+            --primary-slate: #0f172a;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: var(--primary-slate); overflow: hidden; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .barcode { font-family: 'Libre Barcode 39', cursive; font-size: 3.5rem; }
+        
+        .nav-link.active { 
+            background: var(--primary-slate); 
+            color: #fff !important; 
+            border-left: 4px solid var(--primary-red); 
+        }
+
+        .erp-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .erp-table thead th { 
+            position: sticky; top: 0; background: #f8fafc; z-index: 10; 
+            padding: 14px 20px; font-size: 0.7rem; font-weight: 800; 
+            text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; 
+            border-bottom: 1px solid #e2e8f0; 
+            text-align: left;
+        }
+        .erp-table tbody td { padding: 14px 20px; font-size: 0.85rem; border-bottom: 1px solid #f1f5f9; background: #fff; vertical-align: middle; }
+        .erp-table tbody tr:hover td { background: #fff1f2; cursor: pointer; }
+
+        input, select, textarea { 
+            border: 1px solid #e2e8f0; padding: 12px; font-size: 0.9rem; 
+            font-weight: 500; outline: none; transition: 0.2s; width: 100%; border-radius: 8px; background: #fff;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary-red); ring: 2px var(--primary-red); box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1); }
+        input:disabled, button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-action { 
+            background: var(--primary-slate); color: white; padding: 10px 24px; 
+            border-radius: 8px; font-weight: 700; text-transform: uppercase; 
+            font-size: 0.75rem; letter-spacing: 0.05em; transition: 0.2s;
+        }
+        .btn-action:hover:not(:disabled) { background: var(--primary-red); transform: translateY(-1px); shadow: lg; }
+
+        /* Optimized Thermal Print */
+        @media print {
+            @page { size: 100mm 150mm; margin: 0; }
+            body { margin: 0; padding: 0; background: white; }
+            body > *:not(#print-area) { display: none !important; }
+            #print-area { 
+                display: block !important; 
+                width: 100mm; 
+                height: auto; 
+                margin: 0; 
+                padding: 0; 
+                position: absolute !important; 
+                top: 0; left: 0;
+            }
+            #print-area * { visibility: visible !important; }
+        }
+
+        #loading-overlay { background: rgba(255, 255, 255, 0.9); z-index: 9999; }
+        .spinner {
+            border: 4px solid #f3f3f3; border-top: 4px solid #dc2626;
+            border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col font-sans">
+
+    <!-- LOADING OVERLAY -->
+    <div id="loading-overlay" class="fixed inset-0 hidden flex items-center justify-center flex-col gap-4">
+        <div class="spinner"></div>
+        <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Communicating with HQ...</p>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 z-[2000] bg-gradient-to-br from-slate-50 to-slate-200 flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-md p-10 rounded-3xl shadow-2xl border-t-8 border-red-600 relative overflow-hidden">
+            <div class="text-center mb-10 relative z-10">
+                <div class="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center text-white mx-auto mb-6 shadow-xl shadow-red-600/20"><i data-lucide="zap" class="w-8 h-8 fill-current"></i></div>
+                <h2 class="text-3xl font-black tracking-tight uppercase text-slate-900 mb-2">Bijuli <span class="text-red-600">ERP</span></h2>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Logistics Command Portal</p>
+            </div>
+            <form id="login-form" class="space-y-6 relative z-10">
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-500 mb-2 block tracking-wider">Staff Identification</label>
+                    <input type="text" id="user" placeholder="admin1-20 / manager1-5" required class="bg-slate-50 border-2 border-slate-100 focus:bg-white transition-colors py-3">
+                </div>
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-500 mb-2 block tracking-wider">Security Access Key</label>
+                    <input type="password" id="pass" placeholder="••••••••" required class="bg-slate-50 border-2 border-slate-100 focus:bg-white transition-colors py-3">
+                </div>
+                <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-red-600 transition-all shadow-xl hover:shadow-red-600/20 transform active:scale-95">Secure Login</button>
+                <p id="err" class="text-red-600 text-[10px] font-bold text-center hidden uppercase mt-4 bg-red-50 py-3 rounded-lg border border-red-100">Invalid Credentials</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP STRUCTURE -->
+    <div id="portal-ui" class="flex flex-1 overflow-hidden hidden">
+        
+        <!-- SIDEBAR -->
+        <aside class="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0 z-50">
+            <div class="p-8 border-b border-slate-100 flex items-center gap-4">
+                <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-red-600/20"><i data-lucide="zap" class="w-6 h-6 fill-current"></i></div>
+                <div>
+                    <h1 class="font-black tracking-tight uppercase text-lg leading-none">Bijuli</h1>
+                    <p class="text-[9px] font-bold text-red-600 uppercase tracking-widest mt-1">National Hub</p>
+                </div>
+            </div>
+            <nav class="flex-1 px-4 py-8 space-y-1 overflow-y-auto">
+                <button onclick="nav('dashboard')" id="n-dashboard" class="nav-link w-full flex items-center gap-4 px-5 py-3.5 text-xs font-bold uppercase rounded-xl text-slate-500 hover:bg-slate-50 transition-all mb-1"> <i data-lucide="layout-grid" class="w-4 h-4"></i> Dashboard</button>
+                <button onclick="nav('orders')" id="n-orders" class="nav-link w-full flex items-center gap-4 px-5 py-3.5 text-xs font-bold uppercase rounded-xl text-slate-500 hover:bg-slate-50 transition-all mb-1"> <i data-lucide="box" class="w-4 h-4"></i> Orders Registry</button>
+                <button onclick="nav('vendors')" id="n-vendors" class="nav-link w-full flex items-center gap-4 px-5 py-3.5 text-xs font-bold uppercase rounded-lg text-slate-500 hover:bg-slate-50 transition-all mb-1"> <i data-lucide="briefcase" class="w-4 h-4"></i> Vendor Master</button>
+                <button onclick="nav('customers')" id="n-customers" class="nav-link w-full flex items-center gap-4 px-5 py-3.5 text-xs font-bold uppercase rounded-lg text-slate-500 hover:bg-slate-50 transition-all mb-1"> <i data-lucide="users" class="w-4 h-4"></i> Customers</button>
+                
+                <div class="px-5 pt-8 pb-3 text-[9px] font-black text-slate-300 uppercase tracking-widest">Internal</div>
+                <button onclick="nav('branches')" id="n-branches" class="nav-link w-full flex items-center gap-4 px-5 py-3.5 text-xs font-bold uppercase rounded-lg text-slate-500 hover:bg-slate-50 mb-1"> <i data-lucide="map" class="w-4 h-4"></i> Branch Map</button>
+                <button onclick="nav('directory')" id="n-directory" class="nav-link w-full flex items-center gap-4 px-5 py-3.5 text-xs font-bold uppercase rounded-lg text-slate-500 hover:bg-slate-50 mb-1"> <i data-lucide="contact" class="w-4 h-4"></i> Staff Directory</button>
+            </nav>
+            <div class="p-6 border-t border-slate-100 bg-slate-50/50">
+                <div class="flex items-center gap-3 mb-4 p-2 cursor-pointer hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-200" onclick="nav('profile')">
+                    <div id="u-avatar" class="w-10 h-10 bg-slate-900 text-white flex items-center justify-center font-bold text-xs rounded-lg">??</div>
+                    <div class="overflow-hidden"><p id="u-name" class="text-xs font-bold truncate uppercase tracking-tight text-slate-900">Staff</p><p id="u-branch" class="text-[9px] text-slate-400 font-bold uppercase truncate">HQ</p></div>
+                </div>
+                <button onclick="location.reload()" class="w-full py-3 text-[10px] font-bold uppercase text-slate-400 hover:text-red-600 transition-colors tracking-widest hover:bg-white rounded-lg">Logout System</button>
+            </div>
+        </aside>
+
+        <!-- MAIN VIEWPORT -->
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-50 relative">
+            <header class="h-20 bg-white border-b border-slate-200 px-10 flex items-center justify-between sticky top-0 z-40 shadow-sm">
+                <div class="flex items-center gap-6">
+                    <button id="back-btn" onclick="goBack()" class="hidden p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-all"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+                    <h2 id="view-title" class="text-xl font-black uppercase tracking-tight text-slate-900">Registry</h2>
+                </div>
+                <div id="header-actions" class="flex items-center gap-4"></div>
+            </header>
+            <div id="main-area" class="flex-1 overflow-y-auto p-10"></div>
+        </main>
+
+    </div>
+
+    <!-- MODAL SYSTEM -->
+    <div id="modal-overlay" onclick="closeModal()" class="fixed inset-0 z-[1100] bg-slate-950/90 backdrop-blur-sm hidden flex items-center justify-center p-6">
+        <div onclick="event.stopPropagation()" class="bg-white w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center shrink-0 bg-slate-50/50">
+                <h3 id="modal-title" class="font-black uppercase text-xs tracking-[0.2em] text-slate-400">Operation</h3>
+                <button onclick="closeModal()" class="text-slate-300 hover:text-red-600 transition-colors p-2 hover:bg-red-50 rounded-full"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div id="modal-box" class="flex-1 overflow-y-auto p-10 bg-white"></div>
+        </div>
+    </div>
+
+    <!-- PRINT STICKER -->
+    <div id="print-area" class="hidden"></div>
+
+    <script>
+        // --- MASTER DB URL (Single Source) ---
+        const MASTER_URL = "https://script.google.com/macros/s/AKfycbxZbZTiR6rVKpIOwd-tHe2TIE-4voY5o_6afdcDM9p_wOn67RiQF9rraM-VLmoKquJX/exec";
+        
+        const BRANCHES = [
+            "Butwal (HQ) - Rupandehi", "Kathmandu (New Road) - Kathmandu", "Kathmandu (Baneshwor) - Kathmandu", "Kathmandu (Kalanki) - Kathmandu", 
+            "Lalitpur (Satdobato) - Lalitpur", "Kirtipur - Kathmandu", "Bharatpur - Chitwan", "Narayanghat - Chitwan", 
+            "Hetauda - Makwanpur", "Bhairahawa - Rupandehi", "Sainamaina - Rupandehi", 
+            "Devdaha - Rupandehi", "Sunwal - Nawalparasi West", "Ghorahi - Dang", "Tulsipur - Dang", "Bhalubang - Dang", 
+            "Pipara - Kapilvastu", "Nepalgunj (Hub) - Banke", "Pokhara (Lakeside) - Kaski", "Pokhara (Chipledhunga) - Kaski", 
+            "Pokhara (New Road) - Kaski", "Pokhara (Industrial) - Kaski", "Lekhnath - Kaski", "Gaidakot - Nawalpur", 
+            "Biratnagar (Hub) - Morang", "Itahari - Sunsari", "Dharan - Sunsari", "Birtamode - Jhapa", "Damak - Jhapa", 
+            "Biratchowk - Morang", "Birgunj (Hub) - Parsa", "Janakpur - Dhanusa", "Kalaiya - Bara", "Jitpursimara - Bara", 
+            "Birendranagar - Surkhet", "Dailekh Roadside - Surkhet", "Chhinchu - Surkhet", "Dhangadhi (Hub) - Kailali", 
+            "Attariya - Kailali", "Mahendranagar - Kanchanpur", "Tikapur - Kailali"
+        ];
+
+        // --- FULL STAFF ROSTER (38 Profiles) ---
+        const STAFF_ROSTER = [
+            // Managers (Male)
+            { id: 'M-1', u: 'manager1', n: 'Aayush Bashyal', r: 'manager', b: 'Butwal HQ', p: '9857021111', role: 'CEO & Ops Head' },
+            { id: 'M-2', u: 'manager2', n: 'Ramesh Khadka', r: 'manager', b: 'Kathmandu Hub', p: '9851042222', role: 'Valley Chief' },
+            { id: 'M-3', u: 'manager3', n: 'Santosh Gurung', r: 'manager', b: 'Pokhara Hub', p: '9856033333', role: 'Gandaki Lead' },
+            { id: 'M-4', u: 'manager4', n: 'Hari Bansha Jha', r: 'manager', b: 'Biratnagar Hub', p: '9852024444', role: 'Eastern Lead' },
+            { id: 'M-5', u: 'manager5', n: 'Dipendra Shah', r: 'manager', b: 'Nepalgunj Hub', p: '9858025555', role: 'Western Lead' },
+
+            // Finance & HR (Female)
+            { id: 'FH-1', u: 'admin1', n: 'Sarita Shrestha', r: 'admin', b: 'Butwal HQ', p: '9847016666', role: 'Finance Head' },
+            { id: 'FH-2', u: 'admin2', n: 'Namrata Sharma', r: 'admin', b: 'Butwal HQ', p: '9847027777', role: 'HR Manager' },
+            { id: 'FH-3', u: 'admin3', n: 'Pooja Rimal', r: 'admin', b: 'Butwal HQ', p: '9847038888', role: 'Finance Asst.' },
+
+            // Transport (Male)
+            { id: 'TM-1', u: 'admin4', n: 'Birendra Singh', r: 'admin', b: 'Butwal HQ', p: '9867019999', role: 'Transport Manager' },
+            { id: 'TA-1', u: 'admin5', n: 'Rajesh Thapa', r: 'admin', b: 'Kathmandu New Road', p: '9861011010', role: 'Transport Asst.' },
+            { id: 'TA-2', u: 'admin6', n: 'Suman KC', r: 'admin', b: 'Kathmandu Kalanki', p: '9861021212', role: 'Transport Asst.' },
+            { id: 'TA-3', u: 'admin7', n: 'Bikram Chaudhari', r: 'admin', b: 'Bharatpur', p: '9865011313', role: 'Transport Asst.' },
+            { id: 'TA-4', u: 'admin8', n: 'Dinesh Yadav', r: 'admin', b: 'Birgunj', p: '9863011414', role: 'Transport Asst.' },
+            { id: 'TA-5', u: 'admin21', n: 'Kumar Basnet', r: 'admin', b: 'Pokhara', p: '9866011515', role: 'Transport Asst.' },
+            { id: 'TA-6', u: 'admin22', n: 'Surendra Karki', r: 'admin', b: 'Biratnagar', p: '9862011616', role: 'Transport Asst.' },
+            { id: 'TA-7', u: 'admin23', n: 'Raju Dhakal', r: 'admin', b: 'Birtamode', p: '9864011717', role: 'Transport Asst.' },
+            { id: 'TA-8', u: 'admin24', n: 'Mahesh Pandey', r: 'admin', b: 'Birendranagar', p: '9868011818', role: 'Transport Asst.' },
+            { id: 'TA-9', u: 'admin25', n: 'Gopal Bohara', r: 'admin', b: 'Dhangadhi', p: '9869011919', role: 'Transport Asst.' },
+            { id: 'TA-10', u: 'admin26', n: 'Jivan Raule', r: 'admin', b: 'Ghorahi', p: '9865022020', role: 'Transport Asst.' },
+
+            // Marketing (70% Female)
+            { id: 'MK-1', u: 'admin9', n: 'Anjali Lama', r: 'admin', b: 'Butwal HQ', p: '9817012121', role: 'Marketing Manager' },
+            { id: 'MK-2', u: 'admin10', n: 'Sushma Karki', r: 'admin', b: 'Kathmandu', p: '9811012222', role: 'Marketing Officer' },
+            { id: 'MK-3', u: 'admin11', n: 'Nisha Gurung', r: 'admin', b: 'Pokhara', p: '9816012323', role: 'Marketing Officer' },
+            { id: 'MK-4', u: 'admin12', n: 'Rina Chaudhary', r: 'admin', b: 'Itahari', p: '9812012424', role: 'Marketing Officer' },
+            { id: 'MK-5', u: 'admin13', n: 'Binod Magar', r: 'admin', b: 'Dhangadhi', p: '9819012525', role: 'Marketing Officer' }, // Male
+            { id: 'MK-6', u: 'admin14', n: 'Alisha Pradhan', r: 'admin', b: 'Hetauda', p: '9815012626', role: 'Marketing Officer' },
+            { id: 'MK-7', u: 'admin15', n: 'Sujata Rai', r: 'admin', b: 'Dharan', p: '9812022727', role: 'Marketing Officer' },
+            { id: 'MK-8', u: 'admin27', n: 'Priya Verma', r: 'admin', b: 'Janakpur', p: '9814012828', role: 'Marketing Officer' },
+            { id: 'MK-9', u: 'admin28', n: 'Manish Bhatta', r: 'admin', b: 'Mahendranagar', p: '9819022929', role: 'Marketing Officer' }, // Male
+            { id: 'MK-10', u: 'admin29', n: 'Sabina Joshi', r: 'admin', b: 'Butwal Cluster', p: '9817023030', role: 'Marketing Officer' },
+
+            // Operation Incharges (Mixed)
+            { id: 'OP-1', u: 'admin16', n: 'Kiran Poudel', r: 'admin', b: 'Kathmandu Baneshwor', p: '9801013131', role: 'Ops Incharge' },
+            { id: 'OP-2', u: 'admin17', n: 'Sita Giri', r: 'admin', b: 'Lalitpur', p: '9801023232', role: 'Ops Incharge' },
+            { id: 'OP-3', u: 'admin18', n: 'Rabin Shrestha', r: 'admin', b: 'Bhaktapur', p: '9801033333', role: 'Ops Incharge' },
+            { id: 'OP-4', u: 'admin19', n: 'Maya Tamang', r: 'admin', b: 'Kirtipur', p: '9801043434', role: 'Ops Incharge' },
+            { id: 'OP-5', u: 'admin20', n: 'Suraj Biswokarma', r: 'admin', b: 'Ghorahi', p: '9801053535', role: 'Ops Incharge' },
+            { id: 'OP-6', u: 'admin30', n: 'Sunita Thapa', r: 'admin', b: 'Tulsipur', p: '9801063636', role: 'Ops Incharge' },
+            { id: 'OP-7', u: 'admin31', n: 'Kamal Pariyar', r: 'admin', b: 'Bhalubang', p: '9801073737', role: 'Ops Incharge' },
+            { id: 'OP-8', u: 'admin32', n: 'Bimala Oli', r: 'admin', b: 'Sainamaina', p: '9801083838', role: 'Ops Incharge' }
+        ];
+
+        // --- STATE & API ---
+        let state = { orders: [], vendors: [], staff: STAFF_ROSTER };
+        let currentUser = null, activeView = 'orders', viewHistory = [], activeItem = null;
+
+        const saveLocal = () => {
+            localStorage.setItem('bijuli_orders', JSON.stringify(state.orders));
+            localStorage.setItem('bijuli_vendors', JSON.stringify(state.vendors));
+        };
+
+        // --- CLOUD SYNC ---
+        async function syncCloud(tab, data, action) {
+            const url = `${MASTER_URL}?tab=${tab}&action=${action}`;
+            try { await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) }); } 
+            catch(e) { console.error("Sync Error", e); }
+        }
+
+        async function fetchCloud() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            try {
+                const [oRes, vRes] = await Promise.all([ 
+                    fetch(`${MASTER_URL}?tab=Orders`).then(r=>r.json()).catch(()=>[]), 
+                    fetch(`${MASTER_URL}?tab=Vendors`).then(r=>r.json()).catch(()=>[]) 
+                ]);
+                state.orders = oRes.map(o => { 
+                    if (typeof o.log === 'string') { try { o.log = JSON.parse(o.log); } catch(e) { o.log = []; } } 
+                    return o; 
+                });
+                state.vendors = vRes;
+                saveLocal(); render();
+            } catch (e) { console.error("Fetch Error", e); } finally { document.getElementById('loading-overlay').classList.add('hidden'); }
+        }
+
+        // --- NAVIGATION ---
+        function nav(v) {
+            if(activeView !== v) viewHistory.push(activeView);
+            activeView = v;
+            document.getElementById('view-title').innerText = v.replace('-',' ');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.id === 'n-' + v));
+            document.getElementById('back-btn').classList.toggle('hidden', viewHistory.length <= 1);
+            const h = document.getElementById('header-actions'); h.innerHTML = '';
+            if(v === 'orders') h.innerHTML = `<button onclick="openModal('order-type')" class="btn-action shadow-lg shadow-red-600/10">+ New Dispatch</button>`;
+            if(v === 'vendors') h.innerHTML = `<button onclick="openModal('vendor-reg')" class="btn-action shadow-lg shadow-slate-900/10">+ Register Partner</button>`;
+            render();
+        }
+
+        function goBack() { if(viewHistory.length > 1) { activeView = viewHistory.pop(); render(); } }
+
+        function render() {
+            const area = document.getElementById('main-area');
+            if(activeView === 'dashboard') area.innerHTML = renderDashboard();
+            if(activeView === 'orders') area.innerHTML = renderOrders();
+            if(activeView === 'vendors') area.innerHTML = renderVendors();
+            if(activeView === 'customers') area.innerHTML = renderCustomers();
+            if(activeView === 'directory') area.innerHTML = renderDirectory();
+            if(activeView === 'branches') area.innerHTML = renderBranches();
+            if(activeView === 'order-profile') area.innerHTML = renderOrderProfile(activeItem);
+            if(activeView === 'vendor-profile') area.innerHTML = renderVendorProfile(activeItem);
+            if(activeView === 'customer-profile') area.innerHTML = renderCustomerProfile(activeItem);
+            lucide.createIcons();
+        }
+
+        // --- DASHBOARD ---
+        function renderDashboard() {
+            const rev = state.orders.reduce((a, o) => a + (Number(o.cod) || 0), 0);
+            return `<div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm"><p class="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Active Manifests</p><h3 class="text-4xl font-black">${state.orders.length}</h3></div>
+                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm"><p class="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Total COD Flow</p><h3 class="text-4xl font-black text-red-600 italic">रू ${rev.toLocaleString()}</h3></div>
+                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm"><p class="text-[10px] font-black text-slate-400 uppercase mb-2">Network Nodes</p><h3 class="text-4xl font-black">41</h3></div>
+                <div class="bg-white p-8 rounded-3xl border border-slate-900 bg-slate-900 text-white"><p class="text-[10px] font-black text-slate-500 uppercase mb-2">DB Status</p><h3 class="text-4xl font-black text-green-500 uppercase">Live</h3></div>
+            </div>`;
+        }
+
+        // --- ORDERS ---
+        function renderOrders() {
+            return `<div class="mb-6"><input type="text" placeholder="Search AWB or Consignee..." oninput="searchOrders(this.value)" class="bg-white font-bold border-2 border-slate-100 px-6 py-4 shadow-sm rounded-xl"></div>
+            <div class="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm">
+                <table class="erp-table">
+                    <thead><tr><th>AWB #</th><th>Type</th><th>Sender</th><th>Receiver</th><th>Hub</th><th>Status</th></tr></thead>
+                    <tbody id="o-tbody">${state.orders.map(o => `<tr onclick="viewOrder(${o.id})"><td class="mono font-black text-red-600">#${o.id}</td><td class="text-[8px] font-black uppercase tracking-widest">${o.type}</td><td class="font-bold text-xs uppercase">${o.type === 'Vendor' ? o.v_name : o.s_name}</td><td><div class="font-black text-slate-800 text-xs">${o.c_name}</div><div class="text-[9px] font-bold text-slate-400 mono">${o.c_phone}</div></td><td class="text-[9px] font-black text-slate-400 uppercase">${(o.dest || '').split(' - ')[0]}</td><td><span class="text-[9px] font-black uppercase px-3 py-1 bg-slate-100 rounded-lg text-slate-600">${o.status}</span></td></tr>`).join('')}</tbody>
+                </table>
+            </div>`;
+        }
+
+        function viewOrder(id) { activeItem = state.orders.find(o => o.id == id); nav('order-profile'); }
+        function viewVendor(pan) { activeItem = state.vendors.find(v => v.pan == pan); nav('vendor-profile'); }
+        function viewCustomer(p) { activeItem = { p: p, n: (state.orders.find(x => x.c_phone == p)||{}).c_name }; nav('customer-profile'); }
+
+        function renderOrderProfile(o) {
+            const oh = (o.origin || '').split(' - ')[0] || 'Unknown';
+            const dh = (o.dest || '').split(' - ')[0] || 'Unknown';
+            return `<div class="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div class="bg-white p-12 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col lg:flex-row justify-between items-start gap-12">
+                    <div class="flex-1 space-y-10">
+                        <div><span class="text-[9px] font-black uppercase text-red-600 tracking-widest bg-red-50 px-3 py-1 rounded-full">${o.type} Shipment</span><h3 class="text-6xl font-black tracking-tighter uppercase mt-4 text-slate-900">AWB #${o.id}</h3></div>
+                        <div class="grid grid-cols-2 gap-x-16 gap-y-10 text-sm">
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Transit Nodes</p><p class="font-black text-slate-800 text-lg">${oh} <i data-lucide="arrow-right" class="inline w-4 h-4 text-red-600 mx-2"></i> ${dh}</p></div>
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Parcel</p><p class="font-black text-slate-700 uppercase">${o.pkg_type} [${o.pkg_weight}kg]</p></div>
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Sender Entity</p><p class="font-black text-slate-700 uppercase">${o.type==='Vendor'?o.v_name:o.s_name}</p><p class="text-[11px] font-bold text-slate-400 mono">${o.type==='Vendor'?o.v_id:o.s_phone}</p></div>
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Receiver</p><p class="font-black text-slate-700 uppercase">${o.c_name}</p><p class="text-[11px] font-bold text-slate-400 mono">${o.c_phone}</p></div>
+                            <div class="col-span-2"><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Coordinates</p><p class="font-semibold text-slate-600 leading-relaxed text-lg">${o.addr}</p></div>
+                        </div>
+                    </div>
+                    <div class="w-full lg:w-96 space-y-8">
+                        <div class="bg-white border-4 border-red-600 p-10 rounded-[2rem] text-center shadow-xl">
+                            <p class="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">COD Total Collection</p>
+                            <h4 class="text-5xl font-black italic tracking-tighter text-red-600">रू ${Number(o.cod).toLocaleString()}</h4>
+                            <p class="text-[10px] font-bold text-slate-400 mt-6 border-t border-slate-100 pt-4 uppercase">System Fee: रू ${o.fee}</p>
+                        </div>
+                        <div class="p-6 bg-white border border-slate-200 rounded-2xl">
+                            <p class="text-[10px] font-black uppercase text-slate-400 mb-3">State</p>
+                            <select onchange="updateStatus(${o.id}, this.value)" class="font-bold border-none bg-slate-50 p-4 rounded-xl text-xs uppercase text-slate-900"><option value="Created" ${o.status==='Created'?'selected':''}>Created</option><option value="In Transit" ${o.status==='In Transit'?'selected':''}>In Transit</option><option value="Delivered" ${o.status==='Delivered'?'selected':''}>Delivered</option><option value="Returned" ${o.status==='Returned'?'selected':''}>Returned</option></select>
+                        </div>
+                        <button onclick="printLabel(${o.id})" class="w-full py-5 bg-red-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-black transition-all shadow-lg shadow-red-600/20"><i data-lucide="printer" class="inline w-4 h-4 mr-3"></i> Print Sticker</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div class="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm"><h4 class="text-xs font-black uppercase border-l-4 border-red-600 pl-4 mb-8">Audit Trail</h4><div class="space-y-4 max-h-[400px] overflow-y-auto pr-4">${(o.log || []).map(l => `<div class="p-5 bg-slate-50 rounded-2xl border border-slate-100 mb-2"><p class="text-xs font-semibold text-slate-700 mb-3">${l.t}</p><div class="flex justify-between text-[8px] font-black uppercase text-slate-400"><span>Staff: ${l.a}</span><span>${l.d}</span></div></div>`).join('')}</div></div>
+                    <div class="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm"><h4 class="text-xs font-black uppercase border-l-4 border-slate-900 pl-4 mb-8">Update Status</h4><textarea id="o-comment" placeholder="Log details..." class="h-40 mb-6 text-sm p-5 bg-slate-50 font-medium"></textarea><button onclick="addLog(${o.id})" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold uppercase text-xs tracking-widest hover:bg-red-600 shadow-md">Add to Ledger</button></div>
+                </div>
+            </div>`;
+        }
+
+        // --- VENDORS ---
+        function renderVendors() {
+            return `<div class="mb-6"><input type="text" placeholder="Search Partners..." oninput="searchVendors(this.value)" class="bg-white font-bold border-2 border-slate-100 px-6 py-4 shadow-sm rounded-xl"></div>
+            <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                <table class="erp-table">
+                    <thead><tr><th>ID</th><th>Status</th><th>Partner Name</th><th>PAN</th><th>Volume</th></tr></thead>
+                    <tbody id="v-tbody">${state.vendors.map(v => `<tr onclick="viewVendor('${v.pan}')"><td class="mono font-black text-slate-400 text-xs">${v.id || 'PENDING'}</td><td><span class="text-[8px] font-black uppercase px-3 py-1 rounded-full ${v.status==='Active'?'bg-green-100 text-green-700':'bg-amber-100 text-amber-700'}">${v.status}</span></td><td class="font-black text-slate-800 uppercase text-xs">${v.name}</td><td class="mono font-bold text-slate-400">${v.pan}</td><td class="font-black text-red-600">${v.count || 0}</td></tr>`).join('')}</tbody>
+                </table>
+            </div>`;
+        }
+
+        function renderVendorProfile(v) {
+            const vOrders = state.orders.filter(o => o.v_id === v.id || o.v_name === v.name);
+            const br = (v.branch || '').split(' - ')[0] || 'HQ';
+            return `<div class="space-y-10 animate-in fade-in duration-300">
+                <div class="bg-white p-12 rounded-[3rem] border border-slate-100 shadow-sm flex flex-col lg:flex-row justify-between items-start gap-12">
+                    <div class="flex-1 space-y-10">
+                        <div class="flex items-center gap-6"><h3 class="text-5xl font-black tracking-tighter uppercase text-slate-900">${v.name}</h3>
+                        <button onclick="editVendor('${v.pan}')" class="bg-slate-100 text-slate-600 px-6 py-2 text-[10px] font-black uppercase rounded-lg hover:bg-slate-200">Edit Profile</button>
+                        ${v.status === 'Pending verification' && currentUser.r === 'manager' ? `<button onclick="verifyVendor('${v.pan}')" class="bg-green-600 text-white px-8 py-2.5 text-[10px] font-black uppercase rounded-xl shadow-lg">Verify & Issue ID</button>` : ''}</div>
+                        <div class="grid grid-cols-2 lg:grid-cols-3 gap-12 text-sm">
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">PAN Reference</p><p class="font-black text-slate-800 mono text-xl">${v.pan}</p></div>
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Partnership</p><p class="font-black text-red-600 uppercase text-lg">${v.status}</p></div>
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Parent Hub</p><p class="font-black text-slate-800 uppercase text-lg">${br}</p></div>
+                            <div class="col-span-2"><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Business Address</p><p class="font-semibold text-slate-600 text-lg">${v.b_addr}</p></div>
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Identity Holder</p><p class="font-black text-slate-800 uppercase text-lg">${v.o_name}</p></div>
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Owner Phone</p><p class="font-mono text-slate-600 text-xs">${v.o_phone}</p></div>
+                            <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Owner Addr</p><p class="font-medium text-slate-600 text-xs">${v.o_addr}</p></div>
+                            <div class="col-span-3 border-t border-slate-100 pt-4 flex gap-6">
+                                <p class="text-[10px] font-bold text-slate-400 uppercase">Files:</p>
+                                <p class="text-xs font-bold text-sky-600 underline cursor-pointer">${v.reg_file || 'N/A'}</p>
+                                <p class="text-xs font-bold text-sky-600 underline cursor-pointer">${v.id_file || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white border-4 border-slate-900 p-12 rounded-[3rem] text-center shadow-2xl min-w-[280px]">
+                        <p class="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-widest">Partner Lifecycle Vol.</p>
+                        <h4 class="text-7xl font-black italic tracking-tighter text-slate-900 underline decoration-red-600 underline-offset-8">${v.count || 0}</h4>
+                        <p class="text-[11px] font-bold text-slate-400 mt-8 tracking-widest">GROSS: रू ${(v.revenue || 0).toLocaleString()}</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm">
+                    <h4 class="text-xs font-black p-8 border-b border-slate-50 uppercase tracking-[0.2em]">Partner Shipment Registry</h4>
+                    <table class="erp-table">
+                        <thead><tr><th>AWB #</th><th>Consignee</th><th>Transit Route</th><th>Final Status</th><th>COD Value</th></tr></thead>
+                        <tbody>${vOrders.map(o => `<tr onclick="viewOrder(${o.id})"><td class="mono font-bold text-red-600">#${o.id}</td><td class="font-bold text-xs uppercase">${o.c_name}</td><td class="text-[10px] font-black text-slate-400 uppercase">${(o.origin||'').split(' - ')[0]} → ${(o.dest||'').split(' - ')[0]}</td><td><span class="text-[10px] font-black uppercase px-3 py-1 bg-slate-50 rounded-lg">${o.status}</span></td><td class="font-black text-slate-900">रू ${o.cod.toLocaleString()}</td></tr>`).join('')}</tbody>
+                    </table>
+                </div>
+            </div>`;
+        }
+
+        function renderCustomerProfile(c) {
+            const hist = state.orders.filter(o => o.c_phone == c.p);
+            const latest = hist[0] || {};
+            return `<div class="space-y-10 animate-in fade-in duration-500">
+                <div class="bg-white p-12 rounded-[3rem] border border-slate-100 shadow-sm border-l-[16px] border-l-red-600">
+                    <h3 class="text-6xl font-black tracking-tighter uppercase mb-6 text-slate-900">${latest.c_name || 'Consumer Profile'}</h3>
+                    <div class="flex flex-wrap gap-12 items-center border-t border-slate-50 pt-10 mt-6">
+                         <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Mobile ID</p><p class="text-3xl font-black text-red-600 mono">${c.p}</p></div>
+                         <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">History</p><p class="text-lg font-bold text-slate-600 uppercase tracking-widest">${hist.length} Shipments</p></div>
+                         <div class="flex-1"><p class="text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Home Address</p><p class="text-xl font-semibold text-slate-800 leading-snug">${latest.addr || 'No address logged'}</p></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm">
+                    <h4 class="text-xs font-black p-8 border-b border-slate-50 uppercase tracking-widest">Individual Delivery Ledger</h4>
+                    <table class="erp-table">
+                        <thead><tr><th>AWB #</th><th>Origin Branch</th><th>Timestamp</th><th>Final Status</th><th>COD Value</th></tr></thead>
+                        <!-- FIXED ONCLICK TO OPEN ORDER PROFILE -->
+                        <tbody>${hist.map(o => `<tr onclick="viewOrder(${o.id})"><td class="mono font-bold text-red-600">#${o.id}</td><td class="uppercase text-[10px] font-black">${(o.origin||'').split(' - ')[0]}</td><td class="text-xs text-slate-500">${o.ts}</td><td><span class="text-[10px] font-black uppercase px-3 py-1 bg-slate-900 text-white rounded-lg">${o.status}</span></td><td class="font-black text-slate-900">रू ${o.cod.toLocaleString()}</td></tr>`).join('')}</tbody>
+                    </table>
+                </div>
+            </div>`;
+        }
+
+        function renderDirectory() {
+            return `<div class="grid grid-cols-1 md:grid-cols-3 gap-8">${state.staff.map(s => `
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between group hover:border-red-600 transition-all duration-300">
+                    <div>
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-16 h-16 bg-slate-900 text-white flex items-center justify-center font-black text-xl rounded-xl group-hover:bg-red-600 transition-all">${s.n.charAt(0)}</div>
+                            <div><h5 class="text-xl font-black uppercase tracking-tighter">${s.n}</h5><p class="text-[10px] font-black uppercase text-red-600 tracking-widest">${s.role} • ${s.b.split(' - ')[0]}</p></div>
+                        </div>
+                        <div class="space-y-2 mt-4">
+                            <p class="text-xs font-bold text-slate-600 flex items-center gap-2"><i data-lucide="phone" class="w-3 h-3 text-slate-400"></i> ${s.p}</p>
+                            <p class="text-xs font-bold text-slate-600 flex items-center gap-2"><i data-lucide="user" class="w-3 h-3 text-slate-400"></i> ${s.u}</p>
+                        </div>
+                    </div>
+                </div>`).join('')}</div>`;
+        }
+
+        function renderBranches() {
+            return `<div class="grid grid-cols-3 gap-4">${BRANCHES.map(b=>`<div class="bg-white p-4 rounded border border-slate-200 text-[10px] font-bold uppercase text-slate-600 hover:border-red-600">${b}</div>`).join('')}</div>`;
+        }
+
+        // --- ACTIONS ---
+        function updateStatus(id, s) { const o = state.orders.find(x => x.id == id); o.status = s; o.log.unshift({ t: `Status adjusted to ${s}`, a: currentUser.n, d: new Date().toLocaleString() }); saveLocal(); syncCloud('Orders', o, 'update'); render(); }
+        function addLog(id) { const i = document.getElementById('o-comment'); if(!i.value) return; const o = state.orders.find(x => x.id == id); o.log.unshift({ t: i.value, a: currentUser.n, d: new Date().toLocaleString() }); i.value = ""; saveLocal(); syncCloud('Orders', o, 'update'); render(); }
+        function verifyVendor(pan) { const v = state.vendors.find(x => x.pan == pan); v.status = 'Active'; v.id = 'V-' + (1000 + state.vendors.length); saveLocal(); syncCloud('Vendors', v, 'update'); render(); }
+
+        // --- MODAL SYSTEM ---
+        function openModal(type) {
+            const b = document.getElementById('modal-box'), h = document.getElementById('modal-title');
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            
+            if(type === 'order-type') {
+                h.innerText = "Select Dispatch Type";
+                b.innerHTML = `<div class="grid grid-cols-2 gap-12 py-10">
+                    <div onclick="openModal('vendor-order')" class="p-16 border-2 border-slate-100 rounded-[3rem] text-center hover:border-red-600 cursor-pointer shadow-sm transition-all hover:bg-red-50 group">
+                        <div class="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-8 transition-transform group-hover:scale-110"><i data-lucide="building-2" class="w-10 h-10"></i></div>
+                        <h4 class="text-2xl font-black uppercase tracking-tight">Vendor Dispatch</h4>
+                        <p class="text-xs text-slate-400 font-bold uppercase mt-2">Business-to-Consumer</p>
+                    </div>
+                    <div onclick="openModal('classic-order')" class="p-16 border-2 border-slate-100 rounded-[3rem] text-center hover:border-slate-900 cursor-pointer shadow-sm transition-all hover:bg-slate-50 group">
+                        <div class="w-20 h-20 bg-slate-100 text-slate-900 rounded-full flex items-center justify-center mx-auto mb-8 transition-transform group-hover:scale-110"><i data-lucide="user" class="w-10 h-10"></i></div>
+                        <h4 class="text-2xl font-black uppercase tracking-tight">Classic Order</h4>
+                        <p class="text-xs text-slate-400 font-bold uppercase mt-2">Individual Cargo</p>
+                    </div>
+                </div>`;
+                lucide.createIcons();
+            }
+
+            if(type === 'vendor-order' || type === 'classic-order') {
+                const isV = type === 'vendor-order';
+                h.innerText = isV ? "Business Manifest" : "Personal Manifest";
+                b.innerHTML = `<form id="f-ord" class="space-y-8">
+                    <div class="grid grid-cols-2 gap-8">
+                        <div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">Origin Hub</label><select id="orig" class="py-4">${BRANCHES.map(x=>`<option>${x}</option>`).join('')}</select></div>
+                        <div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">Target Hub</label><select id="dest" class="py-4">${BRANCHES.map(x=>`<option>${x}</option>`).join('')}</select></div>
+                    </div>
+                    ${isV ? `<div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">Authorized Partner</label><select id="vsel" class="border-2 border-slate-900 font-bold py-4">${state.vendors.filter(v=>v.status==='Active').map(v=>`<option value="${v.pan}">${v.name}</option>`).join('') || '<option disabled>No Active Partners Found</option>'}</select></div>` : 
+                    `<div class="grid grid-cols-2 gap-8"><div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">Sender Name</label><input id="sn" required class="py-4"></div><div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">Sender Phone</label><input id="sph" required class="py-4"></div></div>`}
+                    <div class="grid grid-cols-3 gap-8">
+                        <div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">Type</label><select id="pt" class="py-4"><option>Box</option><option>Sack</option><option>Doc</option></select></div>
+                        <div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">KG</label><input id="pw" type="number" step="0.1" value="1.0" class="py-4"></div>
+                        <div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">Charge (रू)</label><input id="fee" type="number" value="150" class="py-4 font-bold text-sky-600"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-8">
+                        <div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">Receiver Name</label><input id="cn" required class="py-4"></div>
+                        <div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">Receiver Phone</label><input id="cp" required class="py-4 mono font-black"></div>
+                    </div>
+                    <div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">Address</label><textarea id="ad" rows="2" required class="p-4"></textarea></div>
+                    <div class="grid grid-cols-2 gap-8">
+                        <div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">COD Collection</label><input id="cod" type="number" class="text-red-600 font-black text-2xl py-4" required value="0"></div>
+                        <div><label class="text-[10px] font-black uppercase mb-2 block tracking-widest text-slate-400">Manifest Notes</label><input id="nt" placeholder="Optional..." class="py-4"></div>
+                    </div>
+                    <button class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-2xl transform transition active:scale-95">Confirm & Generate AWB</button>
+                </form>`;
+
+                document.getElementById('f-ord').onsubmit = (e) => {
+                    e.preventDefault();
+                    if(document.getElementById('orig').value == document.getElementById('dest').value){alert("Logic Error: Origin and Target cannot be identical."); return;}
+                    const n = state.orders.length > 0 ? Math.max(...state.orders.map(o=>o.id)) + 1 : 1001;
+                    const vData = isV ? { v_id: state.vendors.find(x=>x.pan === document.getElementById('vsel').value).id, v_name: state.vendors.find(x=>x.pan === document.getElementById('vsel').value).name } : {};
+                    const no = { 
+                        id: n, type: isV ? 'Vendor' : 'Classic', ...vData, 
+                        s_name: !isV ? document.getElementById('sn').value : '', 
+                        s_phone: !isV ? document.getElementById('sph').value : '', 
+                        c_name: document.getElementById('cn').value, 
+                        c_phone: document.getElementById('cp').value, 
+                        origin: document.getElementById('orig').value, 
+                        dest: document.getElementById('dest').value, 
+                        pkg_type: document.getElementById('pt').value, 
+                        pkg_weight: document.getElementById('pw').value, 
+                        fee: parseInt(document.getElementById('fee').value), 
+                        cod: parseInt(document.getElementById('cod').value), 
+                        addr: document.getElementById('ad').value, 
+                        status: 'Created', ts: new Date().toLocaleString(), 
+                        log: [{ t: `Manifest generated via ${currentUser.n}.`, a: currentUser.n, d: new Date().toLocaleString() }] 
+                    };
+                    state.orders.unshift(no); saveLocal(); syncCloud('Orders', no, 'create'); closeModal(); nav('orders');
+                };
+            }
+
+            if(type === 'vendor-reg') {
+                h.innerText = "Partner Onboarding";
+                b.innerHTML = `<form id="f-ven" class="space-y-8 py-5">
+                    <div><h5 class="text-[10px] font-black uppercase text-red-600 mb-6 border-b border-red-50 pb-3 tracking-widest">Business Context</h5>
+                        <div class="grid grid-cols-2 gap-8">
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 mb-2">Company Name</label><input id="vn" required class="py-4"></div>
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 mb-2">Hub Link</label><select id="vbh" class="py-4">${BRANCHES.map(x=>`<option>${x}</option>`).join('')}</select></div>
+                            <div class="col-span-2"><label class="text-[10px] font-black uppercase text-slate-400 mb-2">Premises Coordinates</label><input id="va" required class="py-4"></div>
+                        </div>
+                    </div>
+                    <div><h5 class="text-[10px] font-black uppercase text-slate-900 mb-6 border-b border-slate-50 pb-3 tracking-widest">Legal Ownership</h5>
+                        <div class="grid grid-cols-2 gap-8">
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 mb-2">Identity Holder</label><input id="von" required class="py-4"></div>
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 mb-2">Owner Phone</label><input id="vop" required class="py-4"></div>
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 mb-2">Home Address</label><input id="voh" required class="py-4"></div>
+                            <div><label class="text-[10px] font-black uppercase text-slate-400 mb-2">PAN Reference</label><input id="vpan" required class="mono border-slate-900 border-2 py-4"></div>
+                            <div class="col-span-2 grid grid-cols-2 gap-8">
+                                <div><label class="text-[10px] font-black uppercase text-slate-400 mb-2">Registration File</label><input type="file" id="vrf" class="text-xs pt-3"></div>
+                                <div><label class="text-[10px] font-black uppercase text-slate-400 mb-2">Owner ID Proof</label><input type="file" id="vif" class="text-xs pt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl transform active:scale-95 transition-all">Submit for Review</button>
+                </form>`;
+                document.getElementById('f-ven').onsubmit = (e) => {
+                    e.preventDefault();
+                    // Simulate file names
+                    const regFile = document.getElementById('vrf').value.split('\\').pop() || 'pending_doc.pdf';
+                    const idFile = document.getElementById('vif').value.split('\\').pop() || 'pending_id.jpg';
+
+                    const nv = { 
+                        status: 'Pending verification', name: document.getElementById('vn').value, 
+                        pan: document.getElementById('vpan').value, o_name: document.getElementById('von').value, 
+                        o_phone: document.getElementById('vop').value, o_addr: document.getElementById('voh').value,
+                        b_addr: document.getElementById('va').value, branch: document.getElementById('vbh').value,
+                        reg_file: regFile, id_file: idFile, count: 0, revenue: 0 
+                    };
+                    state.vendors.unshift(nv); saveLocal(); syncCloud('Vendors', nv, 'create'); closeModal(); nav('vendors');
+                };
+            }
+            if(type === 'edit-vendor') {
+                const v = activeItem;
+                h.innerText="Edit Partner Profile";
+                b.innerHTML=`<form id="f-edit-ven" class="space-y-6"><div><label class="text-[9px] font-black uppercase block mb-1">Company</label><input id="evn" value="${v.name}" class="py-3"></div><div class="grid grid-cols-2 gap-6"><div><label class="text-[9px] font-black uppercase block mb-1">Phone</label><input id="evp" value="${v.phone||''}" class="py-3"></div><div><label class="text-[9px] font-black uppercase block mb-1">Email</label><input id="eve" value="${v.email||''}" class="py-3"></div></div><div><label class="text-[9px] font-black uppercase block mb-1">Business Addr</label><input id="eva" value="${v.b_addr}" class="py-3"></div><div class="grid grid-cols-2 gap-6"><div><label class="text-[9px] font-black uppercase block mb-1">Owner Name</label><input id="evo" value="${v.o_name}" class="py-3"></div><div><label class="text-[9px] font-black uppercase block mb-1">Owner Contact</label><input id="evop" value="${v.o_phone}" class="py-3"></div></div><button class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold uppercase text-xs">Save Changes</button></form>`;
+                document.getElementById('f-edit-ven').onsubmit=(e)=>{
+                    e.preventDefault();
+                    v.name = document.getElementById('evn').value; v.phone = document.getElementById('evp').value;
+                    v.email = document.getElementById('eve').value; v.b_addr = document.getElementById('eva').value;
+                    v.o_name = document.getElementById('evo').value; v.o_phone = document.getElementById('evop').value;
+                    saveLocal(); syncCloud('Vendors', v, 'update'); closeModal(); renderVendorProfile(v);
+                };
+            }
+        }
+
+        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+        function editVendor(pan) { activeItem = state.vendors.find(v => v.pan === pan); openModal('edit-vendor'); }
+
+        function printLabel(id) {
+            const o = state.orders.find(x => x.id == id);
+            const p = document.getElementById('print-area');
+            const origin = (o.origin || '').split(' - ')[0];
+            const dest = (o.dest || '').split(' - ')[0];
+            p.innerHTML = `<div style="width: 100mm; padding: 15mm 10mm; background: white; font-family: 'Inter', sans-serif; color: black; border: 4px solid black;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 5px solid black; padding-bottom: 5mm; margin-bottom: 5mm;">
+                    <h2 style="margin:0; font-weight: 900; font-size: 8mm; letter-spacing: -1px;">BIJULI</h2>
+                    <span style="font-weight: 900; font-size: 10mm;">#${o.id}</span>
+                </div>
+                <div style="margin-bottom: 5mm; border-bottom: 2px dashed #666; padding-bottom: 5mm;">
+                    <p style="font-size: 3mm; font-weight: 900; color: #666; margin: 0;">SHIPPER</p>
+                    <p style="margin:2mm 0; font-weight: 900; font-size: 5.5mm; text-transform: uppercase;">${o.type==='Vendor'?o.v_name:o.s_name}</p>
+                    <p style="margin:0; font-size: 4.5mm; font-weight: 700;">FROM: ${origin}</p>
+                </div>
+                <div style="margin-bottom: 5mm;">
+                    <p style="font-size: 3mm; font-weight: 900; color: #666; margin: 0;">CONSIGNEE</p>
+                    <h3 style="margin:2mm 0; font-weight: 900; font-size: 7mm; text-transform: uppercase;">${o.c_name}</h3>
+                    <p style="margin:0; font-size: 7mm; font-weight: 900; letter-spacing: 1px;">${o.c_phone}</p>
+                    <p style="margin:4mm 0; font-size: 5mm; font-weight: 800; line-height: 1.1;">${o.addr}</p>
+                </div>
+                <div style="border: 3px solid #000; padding: 5mm; text-align: center; margin-bottom: 5mm;">
+                    <p style="font-size: 3.5mm; font-weight: 900; letter-spacing: 2px; margin: 0;">CASH ON DELIVERY</p>
+                    <p style="font-size: 12mm; font-weight: 900; margin: 2mm 0 0 0;">रू ${o.cod.toLocaleString()}</p>
+                </div>
+                <div style="text-align:center;">
+                    <div class="barcode" style="font-size: 18mm; line-height: 1;">*${o.id}*</div>
+                    <p style="font-size: 4.5mm; font-weight: 900; text-transform: uppercase; border-top: 1.5px solid #000; padding-top: 2mm; margin: 4mm 0 0 0;">DESTINATION: ${dest.toUpperCase()}</p>
+                </div>
+            </div>`;
+            window.print();
+        }
+
+        // --- AUTH ---
+        document.getElementById('login-form').onsubmit = (e) => {
+            e.preventDefault();
+            const u = document.getElementById('user').value, p = document.getElementById('pass').value;
+            const s = state.staff.find(x => x.u === u);
+            if(s && ((u.startsWith('manager') && p==='manager123') || (u.startsWith('admin') && p==='admin123'))) {
+                currentUser = s; 
+                document.getElementById('u-name').innerText = s.n;
+                document.getElementById('u-branch').innerText = s.b;
+                document.getElementById('u-avatar').innerText = s.n.charAt(0);
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('portal-ui').classList.remove('hidden');
+                fetchCloud();
+                nav(s.r === 'manager' ? 'dashboard' : 'orders');
+            } else document.getElementById('err').classList.remove('hidden');
+        };
+
+        window.onload = () => { lucide.createIcons(); };
+    </script>
+</body>
+</html>
